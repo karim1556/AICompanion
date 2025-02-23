@@ -3,6 +3,7 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import { Button } from './ui/button';
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { useToast } from "@/hooks/use-toast";
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
@@ -13,12 +14,14 @@ interface VoiceInputProps {
 export default function VoiceInput({ onTranscript, isListening, responseText }: VoiceInputProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { speak, stop } = useTextToSpeech();
-  
+  const { toast } = useToast();
+
   const {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
+    isMicrophoneAvailable
   } = useSpeechRecognition();
 
   useEffect(() => {
@@ -35,15 +38,39 @@ export default function VoiceInput({ onTranscript, isListening, responseText }: 
     return () => stop();
   }, [responseText, isSpeaking]);
 
+  useEffect(() => {
+    if (!browserSupportsSpeechRecognition) {
+      toast({
+        title: "Browser Support",
+        description: "Your browser doesn't support voice input. Please try Chrome or Edge.",
+        variant: "destructive"
+      });
+    } else if (!isMicrophoneAvailable) {
+      toast({
+        title: "Microphone Access",
+        description: "Please allow microphone access to use voice input.",
+        variant: "destructive"
+      });
+    }
+  }, [browserSupportsSpeechRecognition, isMicrophoneAvailable]);
+
   if (!browserSupportsSpeechRecognition) {
     return null;
   }
 
-  const toggleListening = () => {
-    if (listening) {
-      SpeechRecognition.stopListening();
-    } else {
-      SpeechRecognition.startListening({ continuous: true });
+  const toggleListening = async () => {
+    try {
+      if (listening) {
+        SpeechRecognition.stopListening();
+      } else {
+        await SpeechRecognition.startListening({ continuous: true });
+      }
+    } catch (error) {
+      toast({
+        title: "Voice Input Error",
+        description: "Failed to start voice input. Please check microphone permissions.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -62,7 +89,7 @@ export default function VoiceInput({ onTranscript, isListening, responseText }: 
         variant="outline"
         size="icon"
         onClick={toggleListening}
-        className={listening ? "bg-red-100" : ""}
+        className={listening ? "bg-red-100 hover:bg-red-200" : ""}
       >
         {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
       </Button>
