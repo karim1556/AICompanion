@@ -5,10 +5,12 @@ import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card, CardContent } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Send } from "lucide-react";
+import { Send, Copy, CheckCheck } from "lucide-react";
 import { sendChatMessage } from "@/lib/openai";
 import { queryClient } from "@/lib/queryClient";
 import type { Chat, Document } from "@shared/schema";
+import VoiceInput from "./VoiceInput";
+import useClipboard from "react-use-clipboard";
 
 interface ChatInterfaceProps {
   onClose: () => void;
@@ -17,6 +19,10 @@ interface ChatInterfaceProps {
 export default function ChatInterface({ onClose }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
   const [selectedDocId, setSelectedDocId] = useState<string>("all");
+  const [lastResponse, setLastResponse] = useState<string>("");
+  const [isCopied, setCopied] = useClipboard(lastResponse, {
+    successDuration: 2000,
+  });
 
   const { data: documents = [] } = useQuery<Document[]>({
     queryKey: ["/api/documents"],
@@ -28,8 +34,10 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
 
   const mutation = useMutation({
     mutationFn: (message: string) => sendChatMessage(message, selectedDocId !== "all" ? Number(selectedDocId) : undefined),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+      setLastResponse(data.response);
+      setMessage("");
     },
   });
 
@@ -37,7 +45,13 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
     e.preventDefault();
     if (message.trim()) {
       mutation.mutate(message);
-      setMessage("");
+    }
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setMessage(transcript);
+    if (transcript.trim()) {
+      mutation.mutate(transcript);
     }
   };
 
@@ -68,7 +82,20 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
         {chatHistory.map((chat) => (
           <Card key={chat.id} className="mb-4">
             <CardContent className="p-4">
-              <p className="font-medium text-primary">{chat.message}</p>
+              <div className="flex justify-between items-start">
+                <p className="font-medium text-primary">{chat.message}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCopied(chat.response)}
+                >
+                  {isCopied && chat.response === lastResponse ? (
+                    <CheckCheck className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               <p className="mt-2 text-muted-foreground">{chat.response}</p>
               {chat.context && (
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -86,6 +113,11 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
           onChange={(e) => setMessage(e.target.value)}
           placeholder={`Type your message${selectedDocId !== "all" ? ' about this document' : ''}...`}
           className="flex-1"
+        />
+        <VoiceInput 
+          onTranscript={handleVoiceTranscript}
+          isListening={mutation.isPending}
+          responseText={lastResponse}
         />
         <Button type="submit" disabled={mutation.isPending}>
           <Send className="h-4 w-4" />
