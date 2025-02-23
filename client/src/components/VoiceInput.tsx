@@ -22,7 +22,10 @@ export default function VoiceInput({ onTranscript, isListening, responseText }: 
     resetTranscript,
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({
+    commands: [],
+    continuous: true,
+  });
 
   useEffect(() => {
     if (transcript) {
@@ -39,20 +42,25 @@ export default function VoiceInput({ onTranscript, isListening, responseText }: 
   }, [responseText, isSpeaking]);
 
   useEffect(() => {
+    // Check browser support and permissions on component mount
     if (!browserSupportsSpeechRecognition) {
       toast({
         title: "Browser Support",
         description: "Your browser doesn't support voice input. Please try Chrome or Edge.",
         variant: "destructive"
       });
-    } else if (!isMicrophoneAvailable) {
-      toast({
-        title: "Microphone Access",
-        description: "Please allow microphone access to use voice input.",
-        variant: "destructive"
-      });
+    } else {
+      // Request microphone permission
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .catch(() => {
+          toast({
+            title: "Microphone Access",
+            description: "Please allow microphone access to use voice input.",
+            variant: "destructive"
+          });
+        });
     }
-  }, [browserSupportsSpeechRecognition, isMicrophoneAvailable]);
+  }, []);
 
   if (!browserSupportsSpeechRecognition) {
     return null;
@@ -61,11 +69,16 @@ export default function VoiceInput({ onTranscript, isListening, responseText }: 
   const toggleListening = async () => {
     try {
       if (listening) {
-        SpeechRecognition.stopListening();
+        await SpeechRecognition.stopListening();
       } else {
         await SpeechRecognition.startListening({ continuous: true });
+        toast({
+          title: "Voice Input Active",
+          description: "Listening for your message...",
+        });
       }
     } catch (error) {
+      console.error("Voice input error:", error);
       toast({
         title: "Voice Input Error",
         description: "Failed to start voice input. Please check microphone permissions.",
