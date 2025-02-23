@@ -49,7 +49,7 @@ export default function FloatingButton() {
           </Button>
         </SheetTrigger>
         <SheetContent side="bottom" className="h-[80vh]">
-          <ChatInterface onClose={() => setIsOpen(false)} />
+          <ChatInterface onClose={() => setIsOpen(false)} context={null} />
         </SheetContent>
       </Sheet>
     </div>

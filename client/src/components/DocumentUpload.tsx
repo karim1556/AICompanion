@@ -39,6 +39,7 @@ export default function DocumentUpload() {
       "application/pdf": [".pdf"],
       "image/*": [".png", ".jpg", ".jpeg"],
       "text/*": [".txt", ".csv", ".md"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"], // Add .docx
     },
   });
 

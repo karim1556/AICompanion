@@ -5,8 +5,10 @@ import { insertDocumentSchema, insertChatSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Set the OpenAI API key directly
+const openai = new OpenAI({
+  apiKey: "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",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Document routes

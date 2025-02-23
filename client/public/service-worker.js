@@ -1,9 +1,13 @@
-const CACHE_NAME = 'doc-assistant-v1';
+const CACHE_NAME = 'doc-assistant-v2'; // Update version if changes are made
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/styles.css',
+  '/script.js',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ];
 
 self.addEventListener('install', (event) => {

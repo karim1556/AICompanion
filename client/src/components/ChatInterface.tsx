@@ -11,9 +11,11 @@ import { queryClient } from "@/lib/queryClient";
 import type { Chat, Document } from "@shared/schema";
 import VoiceInput from "./VoiceInput";
 import useClipboard from "react-use-clipboard";
+import {marked} from "marked";
 
 interface ChatInterfaceProps {
   onClose: () => void;
+  context: Chat | null;
 }
 
 export default function ChatInterface({ onClose }: ChatInterfaceProps) {
@@ -33,7 +35,8 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
   });
 
   const mutation = useMutation({
-    mutationFn: (message: string) => sendChatMessage(message, selectedDocId !== "all" ? Number(selectedDocId) : undefined),
+    mutationFn: (message: string) =>
+      sendChatMessage(message, selectedDocId !== "all" ? Number(selectedDocId) : undefined),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
       setLastResponse(data.response);
@@ -65,7 +68,7 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
       <div className="mb-4">
         <Select value={selectedDocId} onValueChange={setSelectedDocId}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a document to chat about" />
+            <SelectValue placeholder={<>{`Select a document to chat about`}</>} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All documents</SelectItem>
@@ -96,7 +99,10 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
                   )}
                 </Button>
               </div>
-              <p className="mt-2 text-muted-foreground">{chat.response}</p>
+              <div
+                className="mt-2 text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: marked(chat.response) }}
+              />
               {chat.context && (
                 <p className="mt-2 text-xs text-muted-foreground">
                   From document: {(chat.context as { title: string }).title}
@@ -114,7 +120,7 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
           placeholder={`Type your message${selectedDocId !== "all" ? ' about this document' : ''}...`}
           className="flex-1"
         />
-        <VoiceInput 
+        <VoiceInput
           onTranscript={handleVoiceTranscript}
           isListening={mutation.isPending}
           responseText={lastResponse}
