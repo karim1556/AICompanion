@@ -16,7 +16,7 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ onClose }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
-  const [selectedDocId, setSelectedDocId] = useState<string>("");
+  const [selectedDocId, setSelectedDocId] = useState<string>("all");
 
   const { data: documents = [] } = useQuery<Document[]>({
     queryKey: ["/api/documents"],
@@ -27,7 +27,7 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
   });
 
   const mutation = useMutation({
-    mutationFn: (message: string) => sendChatMessage(message, selectedDocId ? Number(selectedDocId) : undefined),
+    mutationFn: (message: string) => sendChatMessage(message, selectedDocId !== "all" ? Number(selectedDocId) : undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
     },
@@ -54,7 +54,7 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
             <SelectValue placeholder="Select a document to chat about" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All documents</SelectItem>
+            <SelectItem value="all">All documents</SelectItem>
             {documents.map((doc) => (
               <SelectItem key={doc.id} value={doc.id.toString()}>
                 {doc.title}
@@ -84,7 +84,7 @@ export default function ChatInterface({ onClose }: ChatInterfaceProps) {
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={`Type your message${selectedDocId ? ' about this document' : ''}...`}
+          placeholder={`Type your message${selectedDocId !== "all" ? ' about this document' : ''}...`}
           className="flex-1"
         />
         <Button type="submit" disabled={mutation.isPending}>
