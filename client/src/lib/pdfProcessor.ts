@@ -1,7 +1,12 @@
 import * as pdfjs from "pdfjs-dist";
 
-// Initialize PDF.js worker with a local worker file
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// Initialize PDF.js worker
+const workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url
+);
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc.toString();
 
 export async function extractTextFromPdf(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
